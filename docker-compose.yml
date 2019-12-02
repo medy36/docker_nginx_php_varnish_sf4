@@ -1,0 +1,73 @@
+version: '3'
+services:
+
+    nginx:
+        container_name: ct_nginx
+        build: .docker/nginx
+        restart: always
+        ports:
+            - "8080:8080"
+        depends_on:
+          - php
+        volumes:
+            - "./source:/home/workspace/symfony"
+            - "./volumes/logs/nginx/:/var/log/nginx"
+
+    db:
+        image: mysql:5.7
+        command: "--default-authentication-plugin=mysql_native_password"
+        container_name: ct_db
+        volumes:
+            - "./volumes/mysql_data:/var/lib/mysql"
+        restart: always
+        environment:
+            MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+            MYSQL_DATABASE: ${MYSQL_DATABASE}
+            MYSQL_USER: ${MYSQL_USER}
+            MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+
+    php:
+        build: .docker/php
+        container_name: ct_php
+        volumes:
+            - ".:/home/workspace/symfony"
+        restart: always
+        depends_on:
+            - db
+        links:
+            - redis
+
+    varnish:
+        build: .docker/varnish
+        container_name: ct_varnish
+        restart: always
+        depends_on:
+            - nginx
+        # Comment out this volume in production
+        volumes:
+            - "../.docker/varnish/conf:/etc/varnish:ro"
+        ports:
+            - "8081:8081"
+
+    h2-proxy:
+        build: .docker/h2-proxy
+        container_name: ct_proxy
+        depends_on:
+            - nginx
+            - varnish
+        ports:
+            - "80:80"
+            - "443:443"
+            - "8443:8443"
+
+    redis:
+        container_name: ct_redis
+        image: redis
+        hostname: redis
+        ports:
+            - "6379:6379"
+        volumes:
+            - "./volumes/redis:/data"
+
+volumes:
+    db-data: {}

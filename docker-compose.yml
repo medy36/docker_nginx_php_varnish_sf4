@@ -7,11 +7,11 @@ services:
         restart: always
         ports:
             - "8080:8080"
-        depends_on:
-          - php
+        links:
+            - "php:php"
         volumes:
-            - "./source:/home/workspace/symfony"
-            - "./volumes/logs/nginx/:/var/log/nginx"
+            - "./source/:/home/workspace/symfony:cached"
+            - "./volumes/logs/nginx/:/var/log/nginx:cached"
 
     db:
         image: mysql:5.7
@@ -20,6 +20,8 @@ services:
         volumes:
             - "./volumes/mysql_data:/var/lib/mysql"
         restart: always
+        ports:
+            - "3306:3306"
         environment:
             MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
             MYSQL_DATABASE: ${MYSQL_DATABASE}
@@ -30,7 +32,7 @@ services:
         build: .docker/php
         container_name: ct_php
         volumes:
-            - ".:/home/workspace/symfony"
+            - "./source:/home/workspace/symfony"
         restart: always
         depends_on:
             - db
@@ -43,7 +45,7 @@ services:
         restart: always
         depends_on:
             - nginx
-        # Comment out this volume in production
+        # Comment out this volume in productiongit push -u origin master
         volumes:
             - "../.docker/varnish/conf:/etc/varnish:ro"
         ports:

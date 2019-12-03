@@ -4,7 +4,7 @@ import std;
 
 backend default {
   # use your nginx container ip or hostname
-  .host = "nginx";
+  .host = "172.21.0.5";
   .port = "8080";
   # Health check
   #.probe = {
